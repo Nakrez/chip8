@@ -51,6 +51,9 @@ class Chip8
 
         // Stack of 16 16bit slots
         uint16_t stack_[16];
+
+        // Graphic memory
+        uint8_t vga_mem_[64 * 32];
 };
 
 #endif /* !CHIP8_HH */

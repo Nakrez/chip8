@@ -2,6 +2,7 @@
 # define CHIP8_HH
 
 # include <iostream>
+# include <iomanip>
 # include <fstream>
 # include <cstdint>
 
@@ -16,8 +17,13 @@ class Chip8
         void init();
         void load_bin(const std::string& path);
         void execute();
+        void dump();
 
         int get_error();
+
+    private:
+        void execute_next();
+        void fault(uint16_t op);
 
     private:
         int error_;
@@ -33,6 +39,15 @@ class Chip8
 
         // 8bit Stack pointer (SP)
         uint8_t sp_;
+
+        // 16 bit I register
+        uint16_t I_;
+
+        // 8bit delay timer
+        uint8_t dt_;
+
+        // 8bit sound timer
+        uint8_t st_;
 
         // Stack of 16 16bit slots
         uint16_t stack_[16];

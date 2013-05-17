@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 
     vm.init();
     vm.load_bin(argv[1]);
+    // vm.dump();
 
     if (!vm.get_error())
         vm.execute();

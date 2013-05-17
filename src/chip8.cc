@@ -89,12 +89,9 @@ void Chip8::execute()
 void Chip8::execute_next()
 {
     // Fetch opcode
-    uint16_t op;
+    uint16_t op = (ram_[pc_] << 0x8) | ram_[pc_ + 1];
 
-    op = ram_[pc_];
-    op = op << 0x8;
-    op |= ram_[pc_ + 1];
-
+    std::cout << "Decoding " << std::hex << op << std::endl;
     switch (op & 0xF000)
     {
         case 0x0000:
@@ -108,8 +105,19 @@ void Chip8::execute_next()
                     break;
                 default: // JP ADDR
                     // -1 to avoid +1 at the end of the switch
-                    pc_ = (op & 0x0FFF) - 1;
+                    pc_ = op & 0x0FFF;
                     break;
+            }
+            break;
+        case 0x4000: // NE Vx, byte
+            {
+                uint16_t x = op & 0x0F00;
+                uint16_t byte = op & 0x00FF;
+
+                if (V_[x] != byte)
+                    pc_ += 2;
+
+                pc_ += 2;
             }
             break;
         case 0x6000: // LD Vx, byte
@@ -121,6 +129,7 @@ void Chip8::execute_next()
 
                 V_[x] = byte;
 
+                pc_ += 2;
                 break;
             }
             break;
@@ -140,6 +149,7 @@ void Chip8::execute_next()
 
                         V_[x] = V_[y] - V_[x];
 
+                        pc_ += 2;
                         break;
                     default:
                         fault(op);
@@ -147,12 +157,17 @@ void Chip8::execute_next()
                 }
             }
             break;
+        case 0xA000: // LD I, addr
+            {
+                I_ = (op & 0x0FFF);
+
+                pc_ += 2;
+            }
+            break;
         default:
             fault(op);
             break;
     }
-
-    ++pc_;
 }
 
 void Chip8::fault(uint16_t op)

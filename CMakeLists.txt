@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(chip8)
 
+add_definitions(-Wall -Wextra -std=c++0x -g)
+
 add_executable(chip8
                src/chip8.cc
                src/main.cc)

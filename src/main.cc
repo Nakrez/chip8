@@ -19,7 +19,11 @@ int main(int argc, char **argv)
 
     Chip8 vm;
 
-    vm.execute();
+    vm.init();
+    vm.load_bin(argv[1]);
+
+    if (!vm.get_error())
+        vm.execute();
 
     return vm.get_error();
 }

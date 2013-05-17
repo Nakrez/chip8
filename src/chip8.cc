@@ -111,6 +111,7 @@ void Chip8::execute_next()
                     pc_ = (op & 0x0FFF) - 1;
                     break;
             }
+            break;
         case 0x6000: // LD Vx, byte
             {
                 uint16_t x = op & 0x0F00;
@@ -122,6 +123,30 @@ void Chip8::execute_next()
 
                 break;
             }
+            break;
+        case 0x8000:
+            {
+                uint16_t x = (op & 0x0F00) >> 0x8;
+                uint16_t y = (op & 0x00F0) >> 0x4;
+
+                switch (op & 0x000F)
+                {
+                    case 0x0007: //SUBN Vx, Vy
+
+                        if (V_[y] > V_[x])
+                            V_[0xF] = 0x1;
+                        else
+                            V_[0xF] = 0x0;
+
+                        V_[x] = V_[y] - V_[x];
+
+                        break;
+                    default:
+                        fault(op);
+                        break;
+                }
+            }
+            break;
         default:
             fault(op);
             break;

@@ -24,6 +24,7 @@ class Chip8
     private:
         void execute_next();
         void fault(uint16_t op);
+        void render(SDL_Surface* screen);
 
     private:
         int error_;
@@ -54,6 +55,8 @@ class Chip8
 
         // Graphic memory
         uint8_t vga_mem_[64 * 32];
+
+        SDL_Surface *pixel_;
 };
 
 #endif /* !CHIP8_HH */

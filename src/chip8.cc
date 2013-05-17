@@ -31,6 +31,7 @@ Chip8::Chip8()
 
 Chip8::~Chip8()
 {
+    SDL_FreeSurface(pixel_);
     SDL_Quit();
 }
 
@@ -46,9 +47,14 @@ void Chip8::init()
     memset(&ram_, 0, 4096);
     memset(&V_, 0, 16);
     memset(&stack_, 0, 16 * 2);
+    memset(&vga_mem_, 0, 64 * 32);
 
     for (size_t i = 0; i < 80; ++i)
         ram_[i] = default_char[i];
+
+    pixel_ = SDL_CreateRGBSurface(0, 10, 10, 32, 0, 0, 0, 0);
+
+    SDL_FillRect(pixel_, NULL, SDL_MapRGB(pixel_->format, 255, 255, 255));
 }
 
 void Chip8::load_bin(const std::string& path)
@@ -86,12 +92,35 @@ void Chip8::load_bin(const std::string& path)
     }
 }
 
+void Chip8::render(SDL_Surface* screen)
+{
+    SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
+
+    SDL_Rect pixel_pos;
+
+    for (size_t x = 0; x < 64; ++x)
+    {
+        for (size_t y = 0; y < 32; ++y)
+        {
+            if (vga_mem_[y * 64 + x] == 1)
+            {
+                pixel_pos.x = x * 10;
+                pixel_pos.y = y * 10;
+
+                SDL_BlitSurface(pixel_, NULL, screen, &pixel_pos);
+            }
+        }
+    }
+
+    SDL_Flip(screen);
+}
+
 void Chip8::execute()
 {
     int loop = 1;
     SDL_Event event;
 
-    SDL_SetVideoMode(640, 320, 32, SDL_HWSURFACE);
+    SDL_Surface* screen = SDL_SetVideoMode(640, 320, 32, SDL_HWSURFACE);
     SDL_WM_SetCaption("Chip8 Emulator", NULL);
 
     while (!error_ && loop)
@@ -106,6 +135,8 @@ void Chip8::execute()
 
         // Execute next instruction
         execute_next();
+
+        render(screen);
     }
 }
 
@@ -114,7 +145,6 @@ void Chip8::execute_next()
     // Fetch opcode
     uint16_t op = (ram_[pc_] << 0x8) | ram_[pc_ + 1];
 
-    std::cout << "Decoding " << std::hex << op << std::endl;
     switch (op & 0xF000)
     {
         case 0x0000:
@@ -191,6 +221,12 @@ void Chip8::execute_next()
             fault(op);
             break;
     }
+
+    if (dt_ > 0)
+        --dt_;
+
+    if (st_ > 0)
+        --st_;
 }
 
 void Chip8::fault(uint16_t op)

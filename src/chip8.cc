@@ -171,6 +171,17 @@ void Chip8::execute_next()
                 pc_ = addr;
             }
             break;
+        case 0x3000: // SE Vx, byte
+            {
+                uint16_t x = op & 0x0F00;
+                uint16_t byte = op & 0x00FF;
+
+                if (V_[x] == byte)
+                    pc_ += 2;
+
+                pc_ += 2;
+            }
+            break;
         case 0x4000: // NE Vx, byte
             {
                 uint16_t x = op & 0x0F00;

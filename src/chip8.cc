@@ -162,6 +162,9 @@ void Chip8::execute_next()
                     break;
             }
             break;
+        case 0x1000: // JP addr
+            pc_ = op & 0x0FFF;
+            break;
         case 0x2000: // Call addr
             {
                 uint16_t addr = op & 0x0FFF;

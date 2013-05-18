@@ -151,7 +151,8 @@ void Chip8::execute_next()
             switch (op & 0x00FF)
             {
                 case 0x00E0: // CLS
-                    fault(op);
+                    memset(&vga_mem_, 0, 64 * 32);
+                    pc_ += 2;
                     break;
                 case 0x00EE: // RET
                     fault(op);

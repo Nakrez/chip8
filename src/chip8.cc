@@ -259,6 +259,15 @@ void Chip8::execute_next()
         case 0xF000:
             switch (op & 0x00FF)
             {
+                case 0x0015: // LD DT, Vx
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        dt_ = V_[x];
+
+                        pc_ += 2;
+                    }
+                    break;
                 case 0x0029: // LD F, Vx
                     {
                         uint16_t x = (op & 0x0F00) >> 0x8;

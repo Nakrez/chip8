@@ -155,7 +155,7 @@ void Chip8::execute_next()
                     pc_ += 2;
                     break;
                 case 0x00EE: // RET
-                    fault(op);
+                    pc_ = stack_[sp_--];
                     break;
                 default: // JP ADDR
                     // -1 to avoid +1 at the end of the switch

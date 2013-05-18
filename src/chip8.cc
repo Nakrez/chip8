@@ -163,6 +163,15 @@ void Chip8::execute_next()
                     break;
             }
             break;
+        case 0x2000: // Call addr
+            {
+                uint16_t addr = op & 0x0FFF;
+
+                stack_[sp_++] = pc_;
+
+                pc_ = addr;
+            }
+            break;
         case 0x4000: // NE Vx, byte
             {
                 uint16_t x = op & 0x0F00;

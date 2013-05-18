@@ -250,6 +250,16 @@ void Chip8::execute_next()
                 pc_ += 2;
             }
             break;
+        case 0xC000: // RND Vx, byte
+            {
+                uint16_t x = (op & 0x0F00) >> 0x8;
+                uint16_t byte = op & 0x00FF;
+
+                V_[x] = (rand() % 255) & byte;
+
+                pc_ += 2;
+            }
+            break;
         case 0xD000: // DRW Vx, Vy, nibble
             {
                 uint16_t x = V_[(op & 0x0F00) >> 0x8];

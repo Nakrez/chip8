@@ -24,6 +24,7 @@ class Chip8
     private:
         void execute_next();
         int events();
+        uint8_t waitkey();
         void fault(uint16_t op);
         void render(SDL_Surface* screen);
 

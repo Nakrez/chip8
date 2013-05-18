@@ -20,6 +20,26 @@ static uint8_t default_char[80] =
     0xF0, 0x80, 0xF0, 0x80, 0x80  //F
 };
 
+static SDLKey keymap[16] =
+{
+    SDLK_1,
+    SDLK_2,
+    SDLK_3,
+    SDLK_4,
+    SDLK_q,
+    SDLK_w,
+    SDLK_e,
+    SDLK_r,
+    SDLK_a,
+    SDLK_s,
+    SDLK_d,
+    SDLK_f,
+    SDLK_z,
+    SDLK_x,
+    SDLK_c,
+    SDLK_v 
+};
+
 Chip8::Chip8()
     : error_(0)
     , pc_(0x200)
@@ -135,16 +155,48 @@ void Chip8::execute()
 int Chip8::events()
 {
     memset(&keyboard_, 0, 16);
-
     SDL_PollEvent(&event_);
 
     switch (event_.type)
     {
         case SDL_QUIT:
             return 0;
+        case SDL_KEYDOWN:
+            for (size_t i = 0; i < 16; i++)
+            {
+                if (keymap[i] == event_.key.keysym.sym)
+                {
+                    keyboard_[i] = 1;
+                    break;
+                }
+            }
+            return 1;
+        default:
+            return 1;
+    }
+}
+
+uint8_t Chip8::waitkey()
+{
+    while (1)
+    {
+        SDL_WaitEvent(&event_);
+
+        switch (event_.type)
+        {
+            case SDL_QUIT:
+                exit(0);
+            case SDL_KEYDOWN:
+                for (size_t i = 0; i < 16; i++)
+                {
+                    if (keymap[i] == event_.key.keysym.sym)
+                        return i;
+                }
+                break;
+        }
     }
 
-    return 1;
+    return 0;
 }
 
 void Chip8::execute_next()
@@ -426,6 +478,15 @@ void Chip8::execute_next()
                         pc_ += 2;
                     }
                     break;
+                case 0x000A: // LD Vx, K
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        V_[x] = waitkey();
+
+                        pc_ += 2;
+                    }
+                    break;
                 case 0x0015: // LD DT, Vx
                     {
                         uint16_t x = (op & 0x0F00) >> 0x8;
@@ -508,11 +569,9 @@ void Chip8::execute_next()
     if (dt_ > 0)
         --dt_;
 
+    // TODO : produce sound
     if (st_ > 0)
-    {
-        std::cout << "BEEP" << std::endl;
         --st_;
-    }
 }
 
 void Chip8::fault(uint16_t op)

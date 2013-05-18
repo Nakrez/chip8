@@ -163,9 +163,10 @@ void Chip8::execute_next()
                     break;
                 case 0x00EE: // RET
                     pc_ = stack_[--sp_];
+                    pc_ += 2;
                     break;
-                default: // JP ADDR
-                    pc_ = op & 0x0FFF;
+                default:
+                    fault(op);
                     break;
             }
             break;
@@ -176,14 +177,14 @@ void Chip8::execute_next()
             {
                 uint16_t addr = op & 0x0FFF;
 
-                stack_[sp_++] = pc_ + 2;
+                stack_[sp_++] = pc_;
 
                 pc_ = addr;
             }
             break;
         case 0x3000: // SE Vx, byte
             {
-                uint16_t x = op & 0x0F00;
+                uint16_t x = (op & 0x0F00) >> 0x8;
                 uint16_t byte = op & 0x00FF;
 
                 if (V_[x] == byte)
@@ -194,7 +195,7 @@ void Chip8::execute_next()
             break;
         case 0x4000: // NE Vx, byte
             {
-                uint16_t x = op & 0x0F00;
+                uint16_t x = (op & 0x0F00) >> 0x8;
                 uint16_t byte = op & 0x00FF;
 
                 if (V_[x] != byte)
@@ -203,12 +204,27 @@ void Chip8::execute_next()
                 pc_ += 2;
             }
             break;
+        case 0x5000: // SE Vx, Vy
+            {
+                uint16_t x = (op & 0x0F00) >> 0x8;
+                uint16_t y = (op & 0x00F0) >> 0x4;
+
+                if ((op & 0x000F) != 0)
+                {
+                    fault(op);
+                    break;
+                }
+
+                if (V_[x] == V_[y])
+                    pc_ += 2;
+
+                pc_ += 2;
+            }
+            break;
         case 0x6000: // LD Vx, byte
             {
-                uint16_t x = op & 0x0F00;
+                uint16_t x = (op & 0x0F00) >> 0x8;
                 uint16_t byte = op & 0x00FF;
-
-                x = x >> 0x8;
 
                 V_[x] = byte;
 
@@ -233,8 +249,53 @@ void Chip8::execute_next()
 
                 switch (op & 0x000F)
                 {
-                    case 0x0007: //SUBN Vx, Vy
+                    case 0x0000: // LD Vx, Vy
+                        V_[x] = V_[y];
+                        pc_ += 2;
+                        break;
+                    case 0x0001: // OR Vx, Vy
+                        V_[x] = V_[x] | V_[y];
+                        pc_ += 2;
+                        break;
+                    case 0x0002: // AND Vx, Vy
+                        V_[x] = V_[x] & V_[y];
+                        pc_ += 2;
+                        break;
+                    case 0x0003: // XOR Vx, Vy
+                        V_[x] = V_[x] ^ V_[y];
+                        pc_ += 2;
+                        break;
+                    case 0x0004: // ADD Vx, Vy
+                        if (V_[y] > (0xFF - V_[x]))
+                            V_[0xF] = 1;
+                        else
+                            V_[0xF] = 0;
 
+                        V_[x] += V_[y];
+
+                        pc_ += 2;
+                        break;
+                    case 0x0005: //SUB Vx, Vy
+                        if (V_[x] > V_[y])
+                            V_[0xF] = 0x1;
+                        else
+                            V_[0xF] = 0x0;
+
+                        V_[x] = V_[x] - V_[y];
+
+                        pc_ += 2;
+                        break;
+                    case 0x0006: // SHR Vx
+                        if (V_[x] & 0x1)
+                            V_[0xF] = 1;
+                        else
+                            V_[0x0] = 0;
+
+                        V_[x] /= 2;
+
+                        pc_ += 2;
+                        break;
+                    case 0x0007: //SUBN Vx, Vy
                         if (V_[y] > V_[x])
                             V_[0xF] = 0x1;
                         else
@@ -244,10 +305,37 @@ void Chip8::execute_next()
 
                         pc_ += 2;
                         break;
+                    case 0x000E: // SHL Vx
+                        if (V_[x] & 0x80)
+                            V_[0xF] = 1;
+                        else
+                            V_[0xF] = 0;
+
+                        V_[x] *= 2;
+
+                        pc_ += 2;
+                        break;
                     default:
                         fault(op);
                         break;
                 }
+            }
+            break;
+        case 0x9000: // SNE Vx, Vy
+            {
+                uint16_t x = (op & 0x0F00) >> 0x8;
+                uint16_t y = (op & 0x00F0) >> 0x4;
+
+                if ((op & 0x000F) != 0)
+                {
+                    fault(op);
+                    break;
+                }
+
+                if (V_[x] != V_[y])
+                    pc_ += 2;
+
+                pc_ += 2;
             }
             break;
         case 0xA000: // LD I, addr
@@ -256,6 +344,9 @@ void Chip8::execute_next()
 
                 pc_ += 2;
             }
+            break;
+        case 0xB000: // JP V0, addr
+            pc_ = (op & 0x0FFF) + V_[0];
             break;
         case 0xC000: // RND Vx, byte
             {
@@ -290,7 +381,6 @@ void Chip8::execute_next()
                             vga_mem_[x + j + ((y + i) * 64)] ^= 1;
                         }
                     }
-
                 }
 
                 pc_ += 2;
@@ -323,7 +413,6 @@ void Chip8::execute_next()
                     fault(op);
                     break;
             }
-
             break;
         case 0xF000:
             switch (op & 0x00FF)
@@ -346,6 +435,15 @@ void Chip8::execute_next()
                         pc_ += 2;
                     }
                     break;
+                case 0x001E: // ADD I, Vx
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        I_ += V_[x];
+
+                        pc_ += 2;
+                    }
+                    break;
                 case 0x0029: // LD F, Vx
                     {
                         uint16_t x = (op & 0x0F00) >> 0x8;
@@ -362,18 +460,28 @@ void Chip8::execute_next()
                         uint8_t tmp = V_[x] % 100;
 
                         ram_[I_] = V_[x] / 100;
-                        ram_[I_ + 1] = tmp / 10;
+                        ram_[I_ + 1] = (V_[x] / 10) % 10;
                         ram_[I_ + 2] = tmp % 10;
 
                         pc_ += 2;
                     }
                     break;
-                case 0x0065: // LD [I], Vx
+                case 0x0055: // LD [I], Vx
                     {
                         uint16_t x = (op & 0x0F00) >> 0x8;
 
                         for (size_t i = 0; i <= x; ++i)
-                            ram_[I_ + i] = V_[i];
+                             ram_[I_ + i] = V_[i];
+
+                        pc_ += 2;
+                    }
+                    break;
+                case 0x0065: // LD Vx, [I]
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        for (size_t i = 0; i <= x; ++i)
+                             V_[i] = ram_[I_ + i];
 
                         pc_ += 2;
                     }

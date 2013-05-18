@@ -155,10 +155,9 @@ void Chip8::execute_next()
                     pc_ += 2;
                     break;
                 case 0x00EE: // RET
-                    pc_ = stack_[sp_--];
+                    pc_ = stack_[--sp_];
                     break;
                 default: // JP ADDR
-                    // -1 to avoid +1 at the end of the switch
                     pc_ = op & 0x0FFF;
                     break;
             }
@@ -167,7 +166,7 @@ void Chip8::execute_next()
             {
                 uint16_t addr = op & 0x0FFF;
 
-                stack_[sp_++] = pc_;
+                stack_[sp_++] = pc_ + 2;
 
                 pc_ = addr;
             }
@@ -269,6 +268,15 @@ void Chip8::execute_next()
         case 0xF000:
             switch (op & 0x00FF)
             {
+                case 0x0007: //LD Vx, DT
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        V_[x] = dt_;
+
+                        pc_ += 2;
+                    }
+                    break;
                 case 0x0015: // LD DT, Vx
                     {
                         uint16_t x = (op & 0x0F00) >> 0x8;
@@ -324,7 +332,10 @@ void Chip8::execute_next()
         --dt_;
 
     if (st_ > 0)
+    {
+        std::cout << "BEEP" << std::endl;
         --st_;
+    }
 }
 
 void Chip8::fault(uint16_t op)

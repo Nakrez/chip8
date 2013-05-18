@@ -23,6 +23,7 @@ class Chip8
 
     private:
         void execute_next();
+        int events();
         void fault(uint16_t op);
         void render(SDL_Surface* screen);
 
@@ -56,7 +57,12 @@ class Chip8
         // Graphic memory
         uint8_t vga_mem_[64 * 32];
 
+        // Keyboard key pressed
+        uint8_t keyboard_[16];
+
         SDL_Surface *pixel_;
+
+        SDL_Event event_;
 };
 
 #endif /* !CHIP8_HH */

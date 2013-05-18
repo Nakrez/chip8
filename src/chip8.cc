@@ -48,6 +48,7 @@ void Chip8::init()
     memset(&V_, 0, 16);
     memset(&stack_, 0, 16 * 2);
     memset(&vga_mem_, 0, 64 * 32);
+    memset(&keyboard_, 0, 16);
 
     for (size_t i = 0; i < 80; ++i)
         ram_[i] = default_char[i];
@@ -117,27 +118,33 @@ void Chip8::render(SDL_Surface* screen)
 
 void Chip8::execute()
 {
-    int loop = 1;
-    SDL_Event event;
 
     SDL_Surface* screen = SDL_SetVideoMode(640, 320, 32, SDL_HWSURFACE);
     SDL_WM_SetCaption("Chip8 Emulator", NULL);
 
-    while (!error_ && loop)
+    while (!error_ && events())
     {
-        SDL_PollEvent(&event);
-
-        switch (event.type)
-        {
-            case SDL_QUIT:
-                loop = 0;
-        }
 
         // Execute next instruction
         execute_next();
 
         render(screen);
     }
+}
+
+int Chip8::events()
+{
+    memset(&keyboard_, 0, 16);
+
+    SDL_PollEvent(&event_);
+
+    switch (event_.type)
+    {
+        case SDL_QUIT:
+            return 0;
+    }
+
+    return 1;
 }
 
 void Chip8::execute_next()
@@ -288,6 +295,35 @@ void Chip8::execute_next()
 
                 pc_ += 2;
             }
+            break;
+        case 0xE000:
+            switch (op & 0x00FF)
+            {
+                case 0x009E:
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        if (keyboard_[V_[x]] != 0)
+                            pc_ += 2;
+
+                        pc_ += 2;
+                    }
+                    break;
+                case 0x00A1:
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        if (keyboard_[V_[x]] == 0)
+                            pc_ += 2;
+
+                        pc_ += 2;
+                    }
+                    break;
+                default:
+                    fault(op);
+                    break;
+            }
+
             break;
         case 0xF000:
             switch (op & 0x00FF)

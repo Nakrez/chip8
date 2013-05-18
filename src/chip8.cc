@@ -435,6 +435,15 @@ void Chip8::execute_next()
                         pc_ += 2;
                     }
                     break;
+                case 0x0018: // LD ST, Vx
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+
+                        st_ = V_[x];
+
+                        pc_ += 2;
+                    }
+                    break;
                 case 0x001E: // ADD I, Vx
                     {
                         uint16_t x = (op & 0x0F00) >> 0x8;

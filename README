@@ -28,6 +28,10 @@ To run chip8 emulator you just have to specify the path to your ROM
 
 ./chip8 path-to-your-ROM
 
+* LICENSE
+
+This software is under MIT LICENSE. For more info see the LICENSE file.
+
 * BUG
 
 If you find any bug please contact me at b.covolato@gmail.com

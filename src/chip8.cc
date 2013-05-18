@@ -256,6 +256,26 @@ void Chip8::execute_next()
                 pc_ += 2;
             }
             break;
+        case 0xF000:
+            switch (op & 0x00FF)
+            {
+                case 0x0033: //LD B, Vx
+                    {
+                        uint16_t x = (op & 0x0F00) >> 0x8;
+                        uint8_t tmp = V_[x] % 100;
+
+                        ram_[I_] = V_[x] / 100;
+                        ram_[I_ + 1] = tmp / 10;
+                        ram_[I_ + 2] = tmp % 10;
+
+                        pc_ += 2;
+                    }
+                    break;
+                default:
+                    fault(op);
+                    break;
+            }
+            break;
         default:
             fault(op);
             break;

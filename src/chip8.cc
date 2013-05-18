@@ -196,6 +196,16 @@ void Chip8::execute_next()
                 break;
             }
             break;
+        case 0x7000: // ADD Vx, byte
+            {
+                uint16_t x = (op & 0x0F00) >> 0x8;
+                uint16_t byte = op & 0x00FF;
+
+                V_[x] += byte;
+
+                pc_ += 2;
+            }
+            break;
         case 0x8000:
             {
                 uint16_t x = (op & 0x0F00) >> 0x8;

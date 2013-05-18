@@ -217,6 +217,35 @@ void Chip8::execute_next()
                 pc_ += 2;
             }
             break;
+        case 0xD000: // DRW Vx, Vy, nibble
+            {
+                uint16_t x = V_[(op & 0x0F00) >> 0x8];
+                uint16_t y = V_[(op & 0x00F0) >> 0x4];
+                uint16_t nibble = (op & 0x000F);
+                uint16_t pixel;
+
+                V_[0xF] = 0;
+
+                for (size_t i = 0; i < nibble; ++i)
+                {
+                    pixel = ram_[I_ + i];
+
+                    for (size_t j = 0; j < 8; ++j)
+                    {
+                        if ((pixel & (0x80 >> j)) != 0)
+                        {
+                            if (vga_mem_[x + j + ((y + i) * 64)] != 0)
+                                V_[0xF] = 1;
+
+                            vga_mem_[x + j + ((y + i) * 64)] ^= 1;
+                        }
+                    }
+
+                }
+
+                pc_ += 2;
+            }
+            break;
         default:
             fault(op);
             break;
